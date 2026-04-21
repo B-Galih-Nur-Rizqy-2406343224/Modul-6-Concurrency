@@ -1,3 +1,9 @@
 ## Reflection 1
 
 Fungsi `handle_connection` menerima parameter `mut stream: TcpStream` yang merepresentasikan koneksi TCP aktif antara server dan browser. `mut` dibutuhkan karena proses membaca data dari stream mengubah state internal-nya (posisi baca). Stream dibungkus dengan `BufReader::new(&mut stream)` untuk menambahkan buffering sehingga data bisa dibaca lebih efisien baris per baris. `buf_reader.lines()` menghasilkan iterator yang membaca satu baris per iterasi; `.map(|result| result.unwrap())` mengekstrak nilai string dari `Result`; `.take_while(|line| !line.is_empty())` menghentikan pembacaan saat menemukan baris kosong, karena di protokol HTTP/1.1 baris kosong adalah pemisah antara header dan body request. Terakhir `.collect()` mengumpulkan semua baris ke `Vec<_>` yang kemudian di-print ke terminal, sehingga kita bisa melihat isi lengkap HTTP request dari browser seperti method, path, versi HTTP, dan header-header seperti `Host`, `User-Agent`, serta `Accept`.
+
+## Reflection 2
+
+Di milestone ini, `handle_connection` diupdate supaya bisa mengirim balik response HTTP ke browser. `fs::read_to_string("hello.html")` membaca isi file HTML dari disk dan menyimpannya sebagai `String`. `status_line` berisi `"HTTP/1.1 200 OK"` yang merupakan baris pertama response HTTP — terdiri dari versi protokol, status code, dan status text. `Content-Length` perlu disertakan di header supaya browser tahu berapa byte yang harus dibaca sebagai body; nilainya diambil dari `contents.len()`. Format response dibangun dengan `format!` menggunakan `\r\n` sebagai pemisah antar header (sesuai spesifikasi HTTP), dan dua `\r\n` sebelum body sebagai pemisah antara header dan konten. Terakhir, `stream.write_all(response.as_bytes())` mengkonversi string response ke bytes dan mengirimnya lewat TCP stream ke browser, yang kemudian me-render HTML tersebut.
+
+![Commit 2 screen capture](/assets/images/commit2.png)
